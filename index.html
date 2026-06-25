@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Painel de Proteção Animal | i-Amb</title>
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <div class="identity">
+          <span class="org-mark">TCE-MT</span>
+          <div class="brand">
+            <span class="eyebrow">IEGM Ambiental 2024</span>
+            <h1>Painel de Proteção Animal</h1>
+            <p>Consolidação das respostas municipais do bloco animal do i-Amb.</p>
+          </div>
+        </div>
+
+        <div class="filters" aria-label="Filtros do painel">
+          <label class="field">
+            <span>Município</span>
+            <select id="municipalitySelect">
+              <option>Carregando...</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>Busca</span>
+            <input id="municipalitySearch" type="search" placeholder="Nome do município">
+          </label>
+        </div>
+      </header>
+
+      <main>
+        <section class="score-band" aria-label="Resumo consolidado">
+          <article class="score-panel">
+            <div>
+              <span class="section-kicker" id="currentScope">Todos os municípios</span>
+              <div class="score-value">
+                <strong id="mainScore">--%</strong>
+                <span>aderência</span>
+              </div>
+              <div class="score-meta" id="scoreMeta">-- respostas avaliadas</div>
+            </div>
+            <canvas id="axisChart" width="520" height="260" aria-label="Comparativo por eixo"></canvas>
+          </article>
+
+          <div class="kpi-grid" id="kpiGrid"></div>
+        </section>
+
+        <section class="dashboard-grid">
+          <article class="panel panel-wide">
+            <div class="panel-heading">
+              <div>
+                <span class="section-kicker">Perguntas</span>
+                <h2>Menores aderências</h2>
+              </div>
+              <span class="panel-badge" id="questionBadge">MT</span>
+            </div>
+            <div class="bar-list" id="questionBars"></div>
+          </article>
+
+          <article class="panel">
+            <div class="panel-heading">
+              <div>
+                <span class="section-kicker">Alertas</span>
+                <h2>Pontos críticos</h2>
+              </div>
+            </div>
+            <div class="critical-list" id="criticalList"></div>
+          </article>
+        </section>
+
+        <section class="dashboard-grid">
+          <article class="panel">
+            <div class="panel-heading">
+              <div>
+                <span class="section-kicker">Ranking</span>
+                <h2>Melhores resultados</h2>
+              </div>
+            </div>
+            <div class="ranking-list" id="topRanking"></div>
+          </article>
+
+          <article class="panel">
+            <div class="panel-heading">
+              <div>
+                <span class="section-kicker">Prioridade</span>
+                <h2>Municípios em atenção</h2>
+              </div>
+            </div>
+            <div class="ranking-list" id="bottomRanking"></div>
+          </article>
+
+          <article class="panel">
+            <div class="panel-heading">
+              <div>
+                <span class="section-kicker">Zoonoses</span>
+                <h2>Vacinas informadas</h2>
+              </div>
+            </div>
+            <div class="zoonosis-list" id="zoonosisList"></div>
+          </article>
+        </section>
+
+        <section class="panel table-panel">
+          <div class="panel-heading">
+            <div>
+              <span class="section-kicker">Detalhamento</span>
+              <h2 id="detailTitle">Respostas por pergunta</h2>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Código</th>
+                  <th>Pergunta</th>
+                  <th>Resposta</th>
+                  <th>Aderência MT</th>
+                </tr>
+              </thead>
+              <tbody id="questionTable"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="panel table-panel">
+          <div class="panel-heading">
+            <div>
+              <span class="section-kicker">Municípios</span>
+              <h2>Matriz consolidada</h2>
+            </div>
+            <span class="panel-badge" id="matrixCount">--</span>
+          </div>
+          <div class="table-wrap matrix-wrap">
+            <table>
+              <thead>
+                <tr id="matrixHead"></tr>
+              </thead>
+              <tbody id="matrixBody"></tbody>
+            </table>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <div class="toast" id="statusToast" role="status">Carregando dados...</div>
+    <script src="./script.js"></script>
+  </body>
+</html>
