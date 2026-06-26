@@ -25,6 +25,8 @@ const QUESTION_META = [
 ];
 
 const AXES = ["Governança", "Prevenção", "Saúde", "Serviços", "Fiscalização", "Monitoramento", "Resposta", "Rede de apoio"];
+const VACCINATION_PROGRAM_CODE = "MT05Q01100";
+const VACCINATION_ZOONOSES_CODE = "MT05Q01200";
 const SCORE_QUESTIONS = QUESTION_META.filter((question) => !question.informational);
 const fmtPct = new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 0 });
 const fmtNumber = new Intl.NumberFormat("pt-BR");
@@ -44,6 +46,7 @@ const els = {
   topRanking: document.querySelector("#topRanking"),
   bottomRanking: document.querySelector("#bottomRanking"),
   zoonosisList: document.querySelector("#zoonosisList"),
+  rabiesAnalysis: document.querySelector("#rabiesAnalysis"),
   detailTitle: document.querySelector("#detailTitle"),
   questionTable: document.querySelector("#questionTable"),
   matrixHead: document.querySelector("#matrixHead"),
@@ -345,6 +348,7 @@ function render() {
   renderCriticalList();
   renderRankings();
   renderZoonosis(current);
+  renderRabiesAnalysis(current);
   renderQuestionTable(current);
   renderMatrix();
 }
@@ -353,7 +357,7 @@ function renderKpis(current, scopeStats) {
   const channel = getQuestionStat("MT05Q01900");
   const castration = getQuestionStat("MT05Q00600");
   const legislation = getQuestionStat("MT05Q00300");
-  const vaccination = getQuestionStat("MT05Q01100");
+  const vaccination = getQuestionStat(VACCINATION_PROGRAM_CODE);
 
   const cards = current
     ? [
@@ -374,7 +378,7 @@ function renderKpis(current, scopeStats) {
         },
         {
           label: "Vacinação anual para zoonoses",
-          value: answerLabel(current, "MT05Q01100"),
+          value: answerLabel(current, VACCINATION_PROGRAM_CODE),
           note: `${fmtPct.format(vaccination.rate)}% dos municípios responderam Sim`
         }
       ]
@@ -562,7 +566,7 @@ function renderRankingItems(items) {
 }
 
 function renderZoonosis(current) {
-  const question = QUESTION_META.find((item) => item.code === "MT05Q01200");
+  const question = QUESTION_META.find((item) => item.code === VACCINATION_ZOONOSES_CODE);
   if (current) {
     const answer = current.answers.get(question.code)?.resposta || "Sem resposta";
     els.zoonosisList.innerHTML = `
@@ -584,6 +588,100 @@ function renderZoonosis(current) {
       </div>
     `;
   }).join("");
+}
+
+function renderRabiesAnalysis(current) {
+  const rows = getRabiesRows(app.municipalities);
+  if (current) {
+    const row = getRabiesRows([current])[0];
+    const ok = row.programState.kind === "yes" && row.hasRabies;
+    const status = ok ? "OK" : "Atenção";
+    const issue = getRabiesIssue(row);
+
+    els.rabiesAnalysis.innerHTML = `
+      <div class="rabies-main">
+        <span>Leitura do município</span>
+        <strong class="${ok ? "ok" : "warn"}">${status}</strong>
+        <p>${escapeHtml(issue)}</p>
+      </div>
+      <div class="rabies-copy">
+        <p>Regra de análise: a vacinação antirrábica de cães e gatos é tratada como obrigação sanitária em todo o território nacional. Ausência de programa anual ou resposta sem Raiva deve acionar acompanhamento.</p>
+        <div class="rabies-metrics">
+          ${rabiesMetric("Programa anual", row.programState.label, "MT05Q01100")}
+          ${rabiesMetric("Raiva informada", row.hasRabies ? "Sim" : "Não", "MT05Q01200")}
+          ${rabiesMetric("Zoonoses declaradas", row.zoonoses || "Sem resposta", "Resposta do município")}
+        </div>
+      </div>
+    `;
+    return;
+  }
+
+  const total = rows.length;
+  const withProgram = rows.filter((row) => row.programState.kind === "yes").length;
+  const withRabies = rows.filter((row) => row.hasRabies).length;
+  const withoutProgram = rows.filter((row) => row.programState.kind !== "yes").length;
+  const priority = rows.filter((row) => row.programState.kind !== "yes" || !row.hasRabies).length;
+  const programRate = total ? (withProgram / total) * 100 : 0;
+  const rabiesRate = total ? (withRabies / total) * 100 : 0;
+
+  els.rabiesAnalysis.innerHTML = `
+    <div class="rabies-main">
+      <span>Cobertura declarada</span>
+      <strong>${fmtPct.format(programRate)}%</strong>
+      <p>${fmtNumber.format(withProgram)} de ${fmtNumber.format(total)} municípios informam programa municipal anual de vacinação para controle de zoonoses.</p>
+    </div>
+    <div class="rabies-copy">
+      <p>Regra de análise: a vacinação antirrábica de cães e gatos é tratada como obrigação sanitária em todo o território nacional. Por isso, o painel sinaliza municípios sem programa anual ou que não mencionam Raiva entre as zoonoses cobertas.</p>
+      <div class="rabies-metrics">
+        ${rabiesMetric("Com programa anual", fmtNumber.format(withProgram), `${fmtPct.format(programRate)}% da base`)}
+        ${rabiesMetric("Com Raiva informada", fmtNumber.format(withRabies), `${fmtPct.format(rabiesRate)}% da base`)}
+        ${rabiesMetric("Sem programa anual", fmtNumber.format(withoutProgram), "Resposta diferente de Sim")}
+        ${rabiesMetric("Prioridade de verificação", fmtNumber.format(priority), "Sem programa ou sem Raiva")}
+      </div>
+    </div>
+  `;
+}
+
+function getRabiesRows(municipalities) {
+  const programQuestion = QUESTION_META.find((item) => item.code === VACCINATION_PROGRAM_CODE);
+  return municipalities.map((municipality) => {
+    const programAnswer = municipality.answers.get(VACCINATION_PROGRAM_CODE)?.resposta || "";
+    const zoonoses = municipality.answers.get(VACCINATION_ZOONOSES_CODE)?.resposta || "";
+    return {
+      municipality,
+      programState: classifyAnswer(programQuestion, programAnswer),
+      zoonoses,
+      hasRabies: mentionsRabies(zoonoses)
+    };
+  });
+}
+
+function getRabiesIssue(row) {
+  const hasProgram = row.programState.kind === "yes";
+  if (hasProgram && row.hasRabies) {
+    return "O município informa programa anual e inclui Raiva entre as zoonoses cobertas.";
+  }
+  if (hasProgram && !row.hasRabies) {
+    return "O município informa programa anual, mas a resposta das zoonoses não menciona Raiva.";
+  }
+  if (!hasProgram && row.hasRabies) {
+    return "A resposta cita Raiva, mas o município não informa programa anual de vacinação.";
+  }
+  return "O município não informa programa anual e também não menciona Raiva nas zoonoses cobertas.";
+}
+
+function mentionsRabies(value) {
+  return normalize(value).includes("raiva");
+}
+
+function rabiesMetric(label, value, note) {
+  return `
+    <div class="rabies-metric">
+      <span>${escapeHtml(label)}</span>
+      <strong>${escapeHtml(value)}</strong>
+      <small>${escapeHtml(note)}</small>
+    </div>
+  `;
 }
 
 function renderQuestionTable(current) {
