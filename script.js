@@ -1,27 +1,27 @@
 const DATA_URL = "./data/iamb_animal_2024.csv";
 
 const QUESTION_META = [
-  { code: "MT05Q00100", short: "Políticas públicas", axis: "Governança", critical: true },
-  { code: "MT05Q00200", short: "PPA, LDO e LOA", axis: "Governança", critical: true },
-  { code: "MT05Q00300", short: "Legislação local", axis: "Governança", critical: true },
-  { code: "MT05Q00400", short: "Proteção e averiguação", axis: "Fiscalização", critical: true },
-  { code: "MT05Q00500", short: "Identificação animal", axis: "Prevenção", critical: false },
-  { code: "MT05Q00600", short: "Campanhas de castração", axis: "Prevenção", critical: true },
-  { code: "MT05Q00700", short: "Conscientização", axis: "Prevenção", critical: false },
-  { code: "MT05Q00800", short: "Educação ambiental", axis: "Prevenção", critical: false },
-  { code: "MT05Q00900", short: "Plano de emergência", axis: "Resposta", critical: true },
-  { code: "MT05Q01000", short: "Incentivos a clínicas", axis: "Serviços", critical: false },
-  { code: "MT05Q01100", short: "Vacinação anual", axis: "Saúde", critical: true },
-  { code: "MT05Q01200", short: "Zoonoses atendidas", axis: "Saúde", critical: false, informational: true },
-  { code: "MT05Q01300", short: "Atendimento veterinário", axis: "Serviços", critical: false },
-  { code: "MT05Q01400", short: "Centro de acolhimento", axis: "Serviços", critical: false },
-  { code: "MT05Q01500", short: "Bem-estar no recolhimento", axis: "Serviços", critical: false },
-  { code: "MT05Q01600", short: "Controle de Zoonoses", axis: "Saúde", critical: false },
-  { code: "MT05Q01700", short: "Parcerias com ONGs", axis: "Rede de apoio", critical: false },
-  { code: "MT05Q01800", short: "Animais abandonados", axis: "Monitoramento", critical: true },
-  { code: "MT05Q01900", short: "Canal de denúncias", axis: "Fiscalização", critical: true },
-  { code: "MT05Q02000", short: "Levantamento de denúncias", axis: "Fiscalização", critical: true },
-  { code: "MT05Q02100", short: "Equipe especializada", axis: "Fiscalização", critical: true }
+  { code: "MT05Q00100", short: "Políticas públicas para a causa animal", axis: "Governança", critical: true },
+  { code: "MT05Q00200", short: "Previsão orçamentária no PPA, LDO e LOA", axis: "Governança", critical: true },
+  { code: "MT05Q00300", short: "Legislação local de proteção animal", axis: "Governança", critical: true },
+  { code: "MT05Q00400", short: "Ações de proteção e apuração de maus-tratos", axis: "Fiscalização", critical: true },
+  { code: "MT05Q00500", short: "Identificação de animais domésticos", axis: "Prevenção", critical: false },
+  { code: "MT05Q00600", short: "Campanhas de castração para baixa renda", axis: "Prevenção", critical: true },
+  { code: "MT05Q00700", short: "Conscientização sobre posse responsável", axis: "Prevenção", critical: false },
+  { code: "MT05Q00800", short: "Educação ambiental com proteção animal", axis: "Prevenção", critical: false },
+  { code: "MT05Q00900", short: "Plano de emergência para resgate de animais", axis: "Resposta", critical: true },
+  { code: "MT05Q01000", short: "Incentivos a clínicas veterinárias", axis: "Serviços", critical: false },
+  { code: "MT05Q01100", short: "Vacinação anual para controle de zoonoses", axis: "Saúde", critical: true },
+  { code: "MT05Q01200", short: "Zoonoses cobertas pela vacinação", axis: "Saúde", critical: false, informational: true },
+  { code: "MT05Q01300", short: "Atendimento médico-veterinário gratuito", axis: "Serviços", critical: false },
+  { code: "MT05Q01400", short: "Centro de acolhimento de animais resgatados", axis: "Serviços", critical: false },
+  { code: "MT05Q01500", short: "Bem-estar no recolhimento de cães e gatos", axis: "Serviços", critical: false },
+  { code: "MT05Q01600", short: "Centro de Controle de Zoonoses", axis: "Saúde", critical: false },
+  { code: "MT05Q01700", short: "Parcerias com ONGs de proteção animal", axis: "Rede de apoio", critical: false },
+  { code: "MT05Q01800", short: "Levantamento de animais abandonados", axis: "Monitoramento", critical: true },
+  { code: "MT05Q01900", short: "Canal direto para denúncias de maus-tratos", axis: "Fiscalização", critical: true },
+  { code: "MT05Q02000", short: "Levantamento de denúncias de maus-tratos e abandono", axis: "Fiscalização", critical: true },
+  { code: "MT05Q02100", short: "Equipe especializada para apuração de denúncias", axis: "Fiscalização", critical: true }
 ];
 
 const AXES = ["Governança", "Prevenção", "Saúde", "Serviços", "Fiscalização", "Monitoramento", "Resposta", "Rede de apoio"];
@@ -368,12 +368,12 @@ function renderKpis(current, scopeStats) {
           note: deltaText(scopeStats.score, app.aggregate.score)
         },
         {
-          label: "Canal de denúncias",
+          label: "Canal direto para denúncias",
           value: answerLabel(current, "MT05Q01900"),
           note: `${fmtPct.format(channel.rate)}% dos municípios responderam Sim`
         },
         {
-          label: "Vacinação anual",
+          label: "Vacinação anual para zoonoses",
           value: answerLabel(current, "MT05Q01100"),
           note: `${fmtPct.format(vaccination.rate)}% dos municípios responderam Sim`
         }
@@ -390,22 +390,22 @@ function renderKpis(current, scopeStats) {
           note: "Média das perguntas estruturantes"
         },
         {
-          label: "Sem canal de denúncias",
+          label: "Municípios sem canal direto para denúncias",
           value: fmtNumber.format(channel.counts.no),
           note: `${fmtPct.format(channel.rate)}% possuem canal direto`
         },
         {
-          label: "Sem castração gratuita",
+          label: "Municípios sem campanhas de castração",
           value: fmtNumber.format(castration.counts.no),
           note: `${fmtPct.format(castration.rate)}% realizam campanhas`
         },
         {
-          label: "Legislação local",
+          label: "Legislação local de proteção animal",
           value: `${fmtPct.format(legislation.rate)}%`,
           note: `${fmtNumber.format(legislation.counts.yes)} municípios responderam Sim`
         },
         {
-          label: "Vacinação anual",
+          label: "Vacinação anual para zoonoses",
           value: `${fmtPct.format(vaccination.rate)}%`,
           note: `${fmtNumber.format(vaccination.counts.yes)} municípios responderam Sim`
         }
