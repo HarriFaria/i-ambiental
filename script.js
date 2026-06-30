@@ -25,6 +25,66 @@ const QUESTION_META = [
 ];
 
 const AXES = ["Governança", "Prevenção", "Saúde", "Serviços", "Fiscalização", "Monitoramento", "Resposta", "Rede de apoio"];
+const SUMMARY_GROUPS = [
+  {
+    id: "governance",
+    title: "Base normativa e orçamento",
+    legal: "Constituição Federal, art. 225",
+    codes: ["MT05Q00100", "MT05Q00200", "MT05Q00300"],
+    actionCurrent: "Formalizar política, norma local e previsão no PPA/LDO/LOA para dar sustentação administrativa às ações.",
+    actionAggregate: "Priorizar municípios sem lei local ou sem previsão orçamentária para induzir política pública mínima."
+  },
+  {
+    id: "enforcement",
+    title: "Maus-tratos: denúncia e apuração",
+    legal: "Lei 9.605/1998, art. 32",
+    codes: ["MT05Q00400", "MT05Q01900", "MT05Q02000", "MT05Q02100"],
+    actionCurrent: "Criar ou reforçar canal direto, registro de denúncias e equipe/fluxo de apuração de maus-tratos e abandono.",
+    actionAggregate: "Cobrar fluxo mínimo de recebimento, triagem, apuração e encaminhamento das denúncias de maus-tratos."
+  },
+  {
+    id: "prevention",
+    title: "Prevenção de abandono",
+    legal: "Dever de proteção da fauna e vedação à crueldade",
+    codes: ["MT05Q00600", "MT05Q00700", "MT05Q01800"],
+    actionCurrent: "Mapear abandono, manter campanhas de castração e comunicar posse responsável com foco preventivo.",
+    actionAggregate: "Usar levantamento de abandonados e castração como critérios de priorização territorial."
+  },
+  {
+    id: "health",
+    title: "Zoonoses e vacinação",
+    legal: "Proteção animal integrada à saúde pública",
+    codes: ["MT05Q01100", "MT05Q01600"],
+    actionCurrent: "Comprovar programa anual de vacinação e informar Raiva entre as zoonoses cobertas quando aplicável.",
+    actionAggregate: "Tratar ausência de programa anual ou de Raiva informada como prioridade de verificação sanitária."
+  },
+  {
+    id: "rescue",
+    title: "Resgate e acolhimento",
+    legal: "Lei 9.605/1998, arts. 25 e 32",
+    codes: ["MT05Q00900", "MT05Q01400", "MT05Q01500"],
+    actionCurrent: "Definir plano de emergência, acolhimento e bem-estar no recolhimento de cães e gatos.",
+    actionAggregate: "Verificar capacidade mínima de resposta para resgate, guarda temporária e destinação adequada."
+  }
+];
+const LEGAL_REFERENCES = [
+  {
+    label: "Constituição Federal, art. 225, § 1º, VII",
+    text: "O Poder Público deve proteger a fauna e vedar práticas que submetam animais à crueldade."
+  },
+  {
+    label: "Lei 9.605/1998, art. 32",
+    text: "Maus-tratos, ferimentos ou mutilação de animais são crime ambiental; por isso denúncia e apuração são pontos sensíveis."
+  },
+  {
+    label: "Lei 9.605/1998, art. 25",
+    text: "Animais apreendidos ou resgatados precisam de guarda, cuidado e destinação compatíveis com o bem-estar."
+  },
+  {
+    label: "Lei 14.064/2020",
+    text: "Reforça a resposta penal nos casos de maus-tratos contra cão ou gato, elevando a prioridade desses fluxos."
+  }
+];
 const VACCINATION_PROGRAM_CODE = "MT05Q01100";
 const VACCINATION_ZOONOSES_CODE = "MT05Q01200";
 const SCORE_QUESTIONS = QUESTION_META.filter((question) => !question.informational);
@@ -34,6 +94,9 @@ const fmtNumber = new Intl.NumberFormat("pt-BR");
 const els = {
   select: document.querySelector("#municipalitySelect"),
   search: document.querySelector("#municipalitySearch"),
+  tabButtons: document.querySelectorAll("[data-view]"),
+  dashboardView: document.querySelector("#dashboardView"),
+  summaryView: document.querySelector("#summaryView"),
   toast: document.querySelector("#statusToast"),
   currentScope: document.querySelector("#currentScope"),
   mainScore: document.querySelector("#mainScore"),
@@ -51,7 +114,15 @@ const els = {
   questionTable: document.querySelector("#questionTable"),
   matrixHead: document.querySelector("#matrixHead"),
   matrixBody: document.querySelector("#matrixBody"),
-  matrixCount: document.querySelector("#matrixCount")
+  matrixCount: document.querySelector("#matrixCount"),
+  summaryScopeBadge: document.querySelector("#summaryScopeBadge"),
+  summaryStatus: document.querySelector("#summaryStatus"),
+  summaryTitle: document.querySelector("#summaryTitle"),
+  summaryLead: document.querySelector("#summaryLead"),
+  summaryFacts: document.querySelector("#summaryFacts"),
+  summaryCriticalList: document.querySelector("#summaryCriticalList"),
+  summaryLegalList: document.querySelector("#summaryLegalList"),
+  summaryActions: document.querySelector("#summaryActions")
 };
 
 const app = {
@@ -59,6 +130,7 @@ const app = {
   municipalities: [],
   selected: "",
   search: "",
+  activeView: "dashboard",
   aggregate: null
 };
 
@@ -78,6 +150,7 @@ async function boot() {
     bindEvents();
     renderMunicipalityOptions();
     render();
+    setActiveView(getInitialView());
     hideToast();
   } catch (error) {
     showToast("Não foi possível carregar a base do painel.");
@@ -98,9 +171,41 @@ function bindEvents() {
     renderMatrix();
   });
 
+  els.tabButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      setActiveView(button.dataset.view);
+    });
+  });
+
   window.addEventListener("resize", debounce(() => {
     renderAxisChart(getCurrentAxisScores(), app.aggregate.axisScores);
   }, 120));
+}
+
+function setActiveView(view) {
+  app.activeView = view === "summary" ? "summary" : "dashboard";
+  const isSummary = app.activeView === "summary";
+
+  els.dashboardView.hidden = isSummary;
+  els.summaryView.hidden = !isSummary;
+  els.dashboardView.classList.toggle("is-active", !isSummary);
+  els.summaryView.classList.toggle("is-active", isSummary);
+
+  els.tabButtons.forEach((button) => {
+    const selected = button.dataset.view === app.activeView;
+    button.classList.toggle("is-active", selected);
+    button.setAttribute("aria-selected", String(selected));
+  });
+
+  if (!isSummary) {
+    renderAxisChart(getCurrentAxisScores(), app.aggregate.axisScores);
+  }
+}
+
+function getInitialView() {
+  const params = new URLSearchParams(window.location.search);
+  const requested = params.get("aba") || params.get("view") || window.location.hash.replace("#", "");
+  return ["resumo", "summary"].includes(normalize(requested)) ? "summary" : "dashboard";
 }
 
 function parseDelimited(text, delimiter) {
@@ -349,6 +454,7 @@ function render() {
   renderRankings();
   renderZoonosis(current);
   renderRabiesAnalysis(current);
+  renderSummary(current);
   renderQuestionTable(current);
   renderMatrix();
 }
@@ -642,6 +748,221 @@ function renderRabiesAnalysis(current) {
   `;
 }
 
+function renderSummary(current) {
+  const summary = current ? buildMunicipalitySummary(current) : buildAggregateSummary();
+
+  els.summaryScopeBadge.textContent = current ? current.name : "MT";
+  els.summaryStatus.className = `summary-status ${summary.tone}`;
+  els.summaryStatus.textContent = summary.status;
+  els.summaryTitle.textContent = summary.title;
+  els.summaryLead.textContent = summary.lead;
+  els.summaryFacts.innerHTML = summary.facts.map(renderSummaryFact).join("");
+  els.summaryCriticalList.innerHTML = summary.items.map(renderSummaryRow).join("");
+  els.summaryLegalList.innerHTML = LEGAL_REFERENCES.map(renderLegalReference).join("");
+  els.summaryActions.innerHTML = summary.actions.map(renderSummaryAction).join("");
+}
+
+function buildAggregateSummary() {
+  const criticalScore = app.aggregate.criticalScore;
+  const risk = getSummaryRisk(criticalScore);
+  const worst = app.aggregate.questionStats
+    .filter((item) => item.meta.critical && Number.isFinite(item.rate))
+    .sort((a, b) => a.rate - b.rate)
+    .slice(0, 3);
+  const worstText = worst.map((item) => item.meta.short).join("; ");
+  const legislation = getQuestionStat("MT05Q00300");
+  const channel = getQuestionStat("MT05Q01900");
+  const team = getQuestionStat("MT05Q02100");
+  const rabiesPriority = getRabiesRows(app.municipalities)
+    .filter((row) => row.programState.kind !== "yes" || !row.hasRabies)
+    .length;
+  const items = SUMMARY_GROUPS.map(buildAggregateSummaryGroup).sort(sortSummaryItems);
+  const priorityItems = items.filter((item) => item.tone !== "ok");
+
+  return {
+    status: risk.label,
+    tone: risk.tone,
+    title: risk.title,
+    lead: `No recorte estadual, os gargalos mais sensíveis são: ${worstText}.`,
+    facts: [
+      { label: "Aderência crítica", value: formatPercent(criticalScore), note: "média das questões estruturantes" },
+      { label: "Sem lei local", value: fmtNumber.format(legislation.counts.no), note: `${formatPercent(legislation.rate)} responderam Sim` },
+      { label: "Sem canal direto", value: fmtNumber.format(channel.counts.no), note: "denúncias de maus-tratos" },
+      { label: "Sem equipe", value: fmtNumber.format(team.counts.no), note: "apuração especializada" },
+      { label: "Prioridade antirrábica", value: fmtNumber.format(rabiesPriority), note: "sem programa anual ou sem Raiva" }
+    ],
+    items,
+    actions: buildSummaryActions(priorityItems, false)
+  };
+}
+
+function buildMunicipalitySummary(municipality) {
+  const criticalScore = computeMunicipalityCriticalScore(municipality);
+  const risk = getSummaryRisk(criticalScore);
+  const items = SUMMARY_GROUPS.map((group) => buildMunicipalitySummaryGroup(municipality, group)).sort(sortSummaryItems);
+  const priorityItems = items.filter((item) => item.tone !== "ok");
+  const priorityText = priorityItems.length
+    ? priorityItems.slice(0, 2).map((item) => item.title).join(" e ")
+    : "sem pendência crítica declarada nos grupos avaliados";
+  const rabiesRow = getRabiesRows([municipality])[0];
+
+  return {
+    status: risk.label,
+    tone: risk.tone,
+    title: `${municipality.name}: ${risk.title}`,
+    lead: `Aderência geral de ${formatPercent(municipality.stats.score)} e aderência crítica de ${formatPercent(criticalScore)}. Prioridade: ${priorityText}.`,
+    facts: [
+      { label: "Aderência geral", value: formatPercent(municipality.stats.score), note: `${municipality.stats.yes}/${municipality.stats.scoreable} respostas positivas` },
+      { label: "Aderência crítica", value: formatPercent(criticalScore), note: "questões estruturantes" },
+      { label: "Lei local", value: answerLabel(municipality, "MT05Q00300"), note: "proteção animal" },
+      { label: "Canal de denúncias", value: answerLabel(municipality, "MT05Q01900"), note: "maus-tratos e abandono" },
+      { label: "Raiva", value: rabiesRow.hasRabies ? "Informada" : "Não informada", note: answerLabel(municipality, VACCINATION_PROGRAM_CODE) }
+    ],
+    items,
+    actions: buildSummaryActions(priorityItems, true)
+  };
+}
+
+function buildAggregateSummaryGroup(group) {
+  const stats = group.codes.map(getQuestionStat).filter(Boolean);
+  const rates = stats.map((item) => item.rate).filter(Number.isFinite);
+  const score = rates.length ? average(rates) : 0;
+  const worst = [...stats]
+    .filter((item) => Number.isFinite(item.rate))
+    .sort((a, b) => a.rate - b.rate)[0];
+
+  return {
+    id: group.id,
+    title: group.title,
+    tone: getSummaryTone(score),
+    score,
+    meta: `${formatPercent(score)} aderência média`,
+    text: worst
+      ? `${group.legal}. Gargalo: ${worst.meta.short} (${formatPercent(worst.rate)} Sim; ${fmtNumber.format(worst.counts.no)} Não).`
+      : `${group.legal}. Sem dados avaliáveis para o grupo.`,
+    action: group.actionAggregate
+  };
+}
+
+function buildMunicipalitySummaryGroup(municipality, group) {
+  const answers = group.codes.map((code) => {
+    const meta = getQuestionMeta(code);
+    const state = classifyAnswer(meta, municipality.answers.get(code)?.resposta || "");
+    return { meta, state };
+  });
+  const scoreable = answers.filter((item) => ["yes", "no", "missing"].includes(item.state.kind));
+  const yes = scoreable.filter((item) => item.state.kind === "yes").length;
+  const pending = scoreable.filter((item) => item.state.kind !== "yes");
+  const score = scoreable.length ? (yes / scoreable.length) * 100 : 0;
+  const pendingText = pending.slice(0, 3)
+    .map((item) => `${item.meta.short}: ${item.state.label}`)
+    .join("; ");
+  const isOk = pending.length === 0 && scoreable.length > 0;
+
+  return {
+    id: group.id,
+    title: group.title,
+    tone: isOk ? "ok" : getSummaryTone(score),
+    score,
+    meta: `${yes}/${scoreable.length} itens positivos`,
+    text: pending.length
+      ? `${group.legal}. Pendências: ${pendingText}.`
+      : `${group.legal}. Itens essenciais declarados como atendidos.`,
+    action: group.actionCurrent
+  };
+}
+
+function buildSummaryActions(priorityItems, isCurrent) {
+  const items = priorityItems.length
+    ? priorityItems.slice(0, 3)
+    : [{
+        title: "Manter evidências atualizadas",
+        action: isCurrent
+          ? "Registrar documentos, canais, relatórios e fluxos que comprovem as respostas declaradas."
+          : "Manter monitoramento anual e preservar trilha de evidências para os municípios com boa aderência."
+      }];
+
+  return items.map((item) => ({
+    title: item.title,
+    text: item.action
+  }));
+}
+
+function renderSummaryFact(item) {
+  return `
+    <div class="summary-fact">
+      <span>${escapeHtml(item.label)}</span>
+      <strong>${escapeHtml(item.value)}</strong>
+      <small>${escapeHtml(item.note)}</small>
+    </div>
+  `;
+}
+
+function renderSummaryRow(item) {
+  return `
+    <div class="summary-row summary-${item.tone}">
+      <div>
+        <strong>${escapeHtml(item.title)}</strong>
+        <p>${escapeHtml(item.text)}</p>
+      </div>
+      <span>${escapeHtml(item.meta)}</span>
+    </div>
+  `;
+}
+
+function renderLegalReference(item) {
+  return `
+    <div class="summary-row legal-row">
+      <div>
+        <strong>${escapeHtml(item.label)}</strong>
+        <p>${escapeHtml(item.text)}</p>
+      </div>
+    </div>
+  `;
+}
+
+function renderSummaryAction(item, index) {
+  return `
+    <div class="summary-action">
+      <span>${index + 1}</span>
+      <div>
+        <strong>${escapeHtml(item.title)}</strong>
+        <p>${escapeHtml(item.text)}</p>
+      </div>
+    </div>
+  `;
+}
+
+function computeMunicipalityCriticalScore(municipality) {
+  const states = QUESTION_META
+    .filter((question) => question.critical)
+    .map((question) => classifyAnswer(question, municipality.answers.get(question.code)?.resposta || ""))
+    .filter((state) => ["yes", "no", "missing"].includes(state.kind));
+  const yes = states.filter((state) => state.kind === "yes").length;
+  return states.length ? (yes / states.length) * 100 : 0;
+}
+
+function getSummaryRisk(score) {
+  if (score < 50) {
+    return { label: "Risco alto", tone: "danger", title: "fragilidade estrutural" };
+  }
+  if (score < 70) {
+    return { label: "Atenção", tone: "warn", title: "resposta parcial" };
+  }
+  return { label: "Monitorar", tone: "ok", title: "base declarada consistente" };
+}
+
+function getSummaryTone(score) {
+  if (score < 50) return "danger";
+  if (score < 70) return "warn";
+  return "ok";
+}
+
+function sortSummaryItems(a, b) {
+  const order = { danger: 0, warn: 1, ok: 2 };
+  return order[a.tone] - order[b.tone] || a.score - b.score || a.title.localeCompare(b.title, "pt-BR");
+}
+
 function getRabiesRows(municipalities) {
   const programQuestion = QUESTION_META.find((item) => item.code === VACCINATION_PROGRAM_CODE);
   return municipalities.map((municipality) => {
@@ -770,6 +1091,10 @@ function getFilteredMunicipalities() {
   return app.municipalities.filter((item) => normalize(item.name).includes(term));
 }
 
+function getQuestionMeta(code) {
+  return QUESTION_META.find((item) => item.code === code);
+}
+
 function getQuestionStat(code) {
   return app.aggregate.questionStats.find((item) => item.meta.code === code);
 }
@@ -799,6 +1124,10 @@ function average(values) {
     return 0;
   }
   return values.reduce((sum, value) => sum + value, 0) / values.length;
+}
+
+function formatPercent(value) {
+  return Number.isFinite(value) ? `${fmtPct.format(value)}%` : "--";
 }
 
 function barColor(value) {

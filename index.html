@@ -33,6 +33,12 @@
       </header>
 
       <main>
+        <nav class="view-tabs" role="tablist" aria-label="Seções do painel">
+          <button class="tab-button is-active" id="tabDashboard" type="button" role="tab" aria-selected="true" aria-controls="dashboardView" data-view="dashboard">Painel</button>
+          <button class="tab-button" id="tabSummary" type="button" role="tab" aria-selected="false" aria-controls="summaryView" data-view="summary">Resumo</button>
+        </nav>
+
+        <div class="view-panel is-active" id="dashboardView" role="tabpanel" aria-labelledby="tabDashboard">
         <section class="score-band" aria-label="Resumo consolidado">
           <article class="score-panel">
             <div>
@@ -152,6 +158,60 @@
               <tbody id="matrixBody"></tbody>
             </table>
           </div>
+        </section>
+
+        </div>
+
+        <section class="view-panel summary-view" id="summaryView" role="tabpanel" aria-labelledby="tabSummary" hidden>
+          <article class="panel summary-hero">
+            <div class="panel-heading">
+              <div>
+                <span class="section-kicker">Resumo legal</span>
+                <h2>Pontos críticos de proteção animal</h2>
+              </div>
+              <span class="panel-badge" id="summaryScopeBadge">MT</span>
+            </div>
+            <div class="summary-hero-body">
+              <div class="summary-headline">
+                <span class="summary-status" id="summaryStatus">--</span>
+                <strong id="summaryTitle">Carregando análise</strong>
+                <p id="summaryLead">Aguarde a leitura dos dados municipais.</p>
+              </div>
+              <div class="summary-facts" id="summaryFacts"></div>
+            </div>
+          </article>
+
+          <section class="summary-grid">
+            <article class="panel">
+              <div class="panel-heading">
+                <div>
+                  <span class="section-kicker">Prioridade</span>
+                  <h2>O que exige atenção</h2>
+                </div>
+              </div>
+              <div class="summary-list" id="summaryCriticalList"></div>
+            </article>
+
+            <article class="panel">
+              <div class="panel-heading">
+                <div>
+                  <span class="section-kicker">Base legal</span>
+                  <h2>Leitura adotada</h2>
+                </div>
+              </div>
+              <div class="summary-list" id="summaryLegalList"></div>
+            </article>
+          </section>
+
+          <article class="panel">
+            <div class="panel-heading">
+              <div>
+                <span class="section-kicker">Encaminhamento</span>
+                <h2>Ações objetivas sugeridas</h2>
+              </div>
+            </div>
+            <div class="summary-actions" id="summaryActions"></div>
+          </article>
         </section>
       </main>
     </div>
