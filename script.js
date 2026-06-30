@@ -838,10 +838,17 @@ function buildAggregateSummaryGroup(group) {
     score,
     meta: `${formatPercent(score)} aderência média`,
     text: worst
-      ? `${group.legal}. Gargalo: ${worst.meta.short} (${formatPercent(worst.rate)} Sim; ${fmtNumber.format(worst.counts.no)} Não).`
+      ? `${group.legal}. Gargalo: ${worst.meta.short} (${formatAnswerBreakdown(worst)}).`
       : `${group.legal}. Sem dados avaliáveis para o grupo.`,
     action: group.actionAggregate
   };
+}
+
+function formatAnswerBreakdown(stat) {
+  const denominator = stat.counts.yes + stat.counts.no;
+  const yesRate = denominator ? (stat.counts.yes / denominator) * 100 : 0;
+  const noRate = denominator ? (stat.counts.no / denominator) * 100 : 0;
+  return `Sim: ${formatPercent(yesRate)} (${fmtNumber.format(stat.counts.yes)}); Não: ${formatPercent(noRate)} (${fmtNumber.format(stat.counts.no)})`;
 }
 
 function buildMunicipalitySummaryGroup(municipality, group) {
